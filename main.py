@@ -1,24 +1,42 @@
-import os
-import json
+import re
+import requests
 from flask import Flask, request, jsonify
 from datetime import datetime
 import base64
-import requests
-from pydantic import BaseModel, Field
-from typing import Union
+import json
 from dotenv import load_dotenv
+import openai
+import os
 
-# Load environment variables
 load_dotenv()
 
-# Replace 'OPENAI_API_KEY' with your actual OpenAI API key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Load OpenAI API key from the .env file
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
 
-class StkPushRequest(BaseModel):
-    amount: Union[int, str] = Field(..., title='Amount', description='Amount for STK push (integer or string)')
-    business_short_code: int = Field(..., title='Business Short Code', description='6-digit Business Short Code')
+def get_openai_response(user_input):
+    prompt = f"User: {user_input}\nAI:"
+    response = openai.Completion.create(
+        engine="davinci-codex",  # You may choose a different engine
+        prompt=prompt,
+        max_tokens=100  # Adjust as needed
+    )
+    return response.choices[0].text.strip()
+
+def extract_payment_details(chat_response):
+    # You need to implement logic to extract payment details from the chat response
+    # This may involve parsing or using some NLP techniques
+    # For now, let's assume a simple placeholder function
+    amount, business_short_code = extract_details_from_text(chat_response)
+    return amount, business_short_code
+
+def extract_details_from_text(text):
+    # This is a placeholder function, you need to implement the actual extraction logic
+    # For now, let's assume a simple regex-based extraction
+    amount = re.search(r'\b\d+\b', text).group()  # Extracts the first sequence of digits
+    business_short_code = re.search(r'\b\d{6}\b', text).group()  # Extracts a 6-digit number
+    return amount, business_short_code
 
 def get_access_token():
     consumer_key = "eiDkD79ICeFRE1FDiHgCbDMiOvXgp3cj"
@@ -27,7 +45,7 @@ def get_access_token():
 
     headers = {'Content-Type': 'application/json'}
     auth = (consumer_key, consumer_secret)
-    
+
     try:
         response = requests.get(access_token_url, headers=headers, auth=auth)
         response.raise_for_status()
@@ -37,42 +55,40 @@ def get_access_token():
     except requests.exceptions.RequestException as e:
         return {'error': 'Access token not found.'}
 
-def initiate_stk_push(request_data: StkPushRequest):
+def initiate_stk_push(amount, business_short_code):
     access_token_response = get_access_token()
-    
     if isinstance(access_token_response, dict):
         access_token = access_token_response.get('access_token')
-
         if access_token:
             process_request_url = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
             callback_url = 'http://yourcustomurl.local/'
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
             passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
-            password = base64.b64encode((str(request_data.business_short_code) + passkey + timestamp).encode()).decode()
+            password = base64.b64encode((str(business_short_code) + passkey + timestamp).encode()).decode()
             party_a = "254719321423"
-            party_b = str(request_data.business_short_code)
+            party_b = str(business_short_code)
             account_reference = 'Test'
             transaction_desc = 'stkpush test'
-            
+
             stk_push_headers = {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + access_token
-            } 
-            
+            }
+
             stk_push_payload = {
-                'BusinessShortCode': str(request_data.business_short_code),
+                'BusinessShortCode': business_short_code,
                 'Password': password,
                 'Timestamp': timestamp,
                 'TransactionType': 'CustomerPayBillOnline',
-                'Amount': str(request_data.amount),
+                'Amount': amount,
                 'PartyA': party_a,
                 'PartyB': party_b,
                 'PhoneNumber': party_a,
                 'CallBackURL': callback_url,
                 'AccountReference': account_reference,
                 'TransactionDesc': transaction_desc
-            }      
-            
+            }
+
             try:
                 response = requests.post(process_request_url, headers=stk_push_headers, json=stk_push_payload)
                 response.raise_for_status()
@@ -91,42 +107,22 @@ def initiate_stk_push(request_data: StkPushRequest):
     else:
         return jsonify({'error': 'Failed to retrieve access token.'}), 500
 
-def openai_chat(message):
-    openai_endpoint = "https://api.openai.com/v1/chat/completions"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {OPENAI_API_KEY}"
-    }
-    data = {
-        "messages": [{"role": "system", "content": "You are a helpful assistant."},
-                     {"role": "user", "content": message}]
-    }
-
-    try:
-        response = requests.post(openai_endpoint, headers=headers, json=data)
-        response.raise_for_status()
-        result = response.json()
-        return result['choices'][0]['message']['content']
-    except requests.exceptions.RequestException as e:
-        return f'Error in OpenAI request: {str(e)}'
-
 @app.route('/initiate_stk_push', methods=['POST'])
 def handle_stk_push_request():
     try:
-        request_data = StkPushRequest.parse_obj(request.json)
-        response = initiate_stk_push(request_data)
+        user_input = request.form['user_input']
+
+        # Use OpenAI to generate a response based on user input
+        ai_response = get_openai_response(user_input)
+
+        # Extract payment details from the AI response
+        amount, business_short_code = extract_payment_details(ai_response)
+
+        # Use the extracted details to initiate STK push
+        response = initiate_stk_push(amount, business_short_code)
         return response
     except Exception as e:
-        return jsonify({'error': f'Error processing request: {str(e)}'}), 500
-
-@app.route('/chat', methods=['POST'])
-def handle_chat_request():
-    try:
-        user_message = request.json.get('message', '')
-        ai_response = openai_chat(user_message)
-        return jsonify({'response': ai_response})
-    except Exception as e:
-        return jsonify({'error': f'Error processing chat request: {str(e)}'}), 500
+        return json.dumps({'error': f'Error processing request: {str(e)}'})
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)
