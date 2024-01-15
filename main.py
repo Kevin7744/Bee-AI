@@ -4,7 +4,11 @@ from datetime import datetime
 import base64
 from pydantic import BaseModel
 from typing import Union
+import dotenv
+from langchain.schema import HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
 
+dotenv.load_dotenv()
 app = Flask(__name__)
 
 class StkPushRequest(BaseModel):
@@ -89,6 +93,9 @@ def handle_stk_push_request():
         return response
     except Exception as e:
         return jsonify({'error': f'Error processing request: {str(e)}'}), 500
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
