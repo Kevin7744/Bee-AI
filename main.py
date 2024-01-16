@@ -5,38 +5,21 @@ from datetime import datetime
 import base64
 import json
 from dotenv import load_dotenv
-import openai
 import os
 
 load_dotenv()
 
-# Load OpenAI API key from the .env file
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 app = Flask(__name__)
 
-def get_openai_response(user_input):
-    prompt = f"User: {user_input}\nAI:"
-    response = openai.Completion.create(
-        engine="davinci-codex",  # You may choose a different engine
-        prompt=prompt,
-        max_tokens=100  # Adjust as needed
-    )
-    return response.choices[0].text.strip()
-
-def extract_payment_details(chat_response):
-    # You need to implement logic to extract payment details from the chat response
-    # This may involve parsing or using some NLP techniques
-    # For now, let's assume a simple placeholder function
-    amount, business_short_code = extract_details_from_text(chat_response)
-    return amount, business_short_code
-
-def extract_details_from_text(text):
-    # This is a placeholder function, you need to implement the actual extraction logic
-    # For now, let's assume a simple regex-based extraction
-    amount = re.search(r'\b\d+\b', text).group()  # Extracts the first sequence of digits
-    business_short_code = re.search(r'\b\d{6}\b', text).group()  # Extracts a 6-digit number
-    return amount, business_short_code
+def extract_payment_details(user_input):
+    # Use regex to extract amount and business code
+    match = re.search(r'(\d+)\s+to\s+(\d{6})', user_input)
+    if match:
+        amount = match.group(1)
+        business_short_code = match.group(2)
+        return amount, business_short_code
+    else:
+        return None, None
 
 def get_access_token():
     consumer_key = "eiDkD79ICeFRE1FDiHgCbDMiOvXgp3cj"
@@ -110,17 +93,18 @@ def initiate_stk_push(amount, business_short_code):
 @app.route('/initiate_stk_push', methods=['POST'])
 def handle_stk_push_request():
     try:
-        user_input = request.form['user_input']
+        user_input = request.json['user_input']
 
-        # Use OpenAI to generate a response based on user input
-        ai_response = get_openai_response(user_input)
+        # Extract payment details using regex
+        amount, business_short_code = extract_payment_details(user_input)
 
-        # Extract payment details from the AI response
-        amount, business_short_code = extract_payment_details(ai_response)
+        if amount is not None and business_short_code is not None:
+            # Use the extracted details to initiate STK push
+            response = initiate_stk_push(amount, business_short_code)
+            return response
+        else:
+            return jsonify({'error': 'Invalid user input format. Please provide amount and business code.'}), 400
 
-        # Use the extracted details to initiate STK push
-        response = initiate_stk_push(amount, business_short_code)
-        return response
     except Exception as e:
         return json.dumps({'error': f'Error processing request: {str(e)}'})
 
