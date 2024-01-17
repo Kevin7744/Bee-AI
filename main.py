@@ -20,7 +20,6 @@ def extract_payment_details(user_input):
         return amount, business_short_code
     else:
         return None, None
-
 def get_access_token():
     consumer_key = "eiDkD79ICeFRE1FDiHgCbDMiOvXgp3cj"
     consumer_secret = "BfFwVt1uGLt7Mki3"
@@ -34,9 +33,9 @@ def get_access_token():
         response.raise_for_status()
         result = response.json()
         access_token = result.get('access_token')
-        return {'access_token': access_token}
+        return access_token
     except requests.exceptions.RequestException as e:
-        return {'error': 'Access token not found.'}
+        return None
 
 def initiate_stk_push(amount, business_short_code):
     access_token_response = get_access_token()
@@ -108,50 +107,115 @@ def handle_stk_push_request():
     except Exception as e:
         return json.dumps({'error': f'Error processing request: {str(e)}'})
 
-
 @app.route('/register_c2b_urls', methods=['POST'])
 def register_c2b_urls():
-    # Extract data from the request
-    data = request.json
-    short_code = data.get('ShortCode')
-    response_type = data.get('ResponseType')
-    confirmation_url = data.get('ConfirmationURL')
-    validation_url = data.get('ValidationURL')
+    try:
+        # Extract data from the request
+        data = request.json
+        short_code = data.get('ShortCode')
+        response_type = data.get('ResponseType')
+        confirmation_url = data.get('ConfirmationURL')
+        validation_url = data.get('ValidationURL')
 
-    # Prepare the request body for C2B URL registration
-    registration_data = {
-        "ShortCode": short_code,
-        "ResponseType": response_type,
-        "ConfirmationURL": confirmation_url,
-        "ValidationURL": validation_url
-    }
+        # Obtain the access token
+        access_token = get_access_token()
+        
+        if access_token:
+            # Prepare the request body for C2B URL registration
+            registration_data = {
+                "ShortCode": short_code,
+                "ResponseType": response_type,
+                "ConfirmationURL": confirmation_url,
+                "ValidationURL": validation_url
+            }
 
-    # Make a POST request to the C2B URL registration endpoint
-    c2b_registration_url = 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl'
-    headers = {"Authorization": "Bearer YOUR_ACCESS_TOKEN", "Content-Type": "application/json"}
-    
-    registration_response = requests.post(c2b_registration_url, json=registration_data, headers=headers).json()
+            # Make a POST request to the C2B URL registration endpoint
+            c2b_registration_url = 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl'
+            headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+            
+            registration_response = requests.post(c2b_registration_url, json=registration_data, headers=headers).json()
 
-    # Return the response from the C2B URL registration
-    return jsonify(registration_response)
+            # Return the response from the C2B URL registration
+            return jsonify(registration_response)
+        else:
+            return jsonify({'error': 'Failed to retrieve access token.'}), 500
 
+    except Exception as e:
+        return json.dumps({'error': f'Error processing request: {str(e)}'})
+
+def generate_dynamic_qr(data):
+    access_token_response = get_access_token()
+    if 'access_token' in access_token_response:
+        access_token = access_token_response['access_token']
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {access_token}'
+        }
+        dynamic_qr_url = 'https://sandbox.safaricom.co.ke/mpesa/qrcode/v1/generate'
+        response = requests.post(dynamic_qr_url, json=data, headers=headers)
+        return response.json()
+    else:
+        return access_token_response
 
 @app.route('/generate_dynamic_qr', methods=['POST'])
-def generate_dynamic_qr():
-    # Get data from the request
-    data = request.json
+def generate_dynamic_qr_endpoint():
+    try:
+        data = request.json
+        response = generate_dynamic_qr(data)
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({'error': f'Error processing request: {str(e)}'}), 500
 
-    # Update the URL for the dynamic QR code generation API
-    dynamic_qr_url = 'https://sandbox.safaricom.co.ke/mpesa/qrcode/v1/generate'
 
-    # Send a POST request to generate the dynamic QR code
-    dynamic_qr_response = requests.post(dynamic_qr_url, json=data).json()
+@app.route('/reverse_transaction', methods=['POST'])
+def reverse_transaction():
+    try:
+        # Extract data from the request
+        data = request.json
+        initiator = data.get('Initiator')
+        security_credential = data.get('SecurityCredential')
+        command_id = data.get('CommandID')
+        transaction_id = data.get('TransactionID')
+        amount = data.get('Amount')
+        receiver_party = data.get('ReceiverParty')
+        receiver_identifier_type = data.get('ReceiverIdentifierType')
+        result_url = data.get('ResultURL')
+        queue_timeout_url = data.get('QueueTimeOutURL')
+        remarks = data.get('Remarks')
+        occasion = data.get('Occasion')
 
-    # Print the response from the dynamic QR code generation
-    print(dynamic_qr_response)
+        # Obtain the access token
+        access_token = get_access_token()
+        
+        if access_token:
+            # Prepare the request body for the transaction reversal
+            reversal_data = {
+                "Initiator": initiator,
+                "SecurityCredential": security_credential,
+                "CommandID": command_id,
+                "TransactionID": transaction_id,
+                "Amount": amount,
+                "ReceiverParty": receiver_party,
+                "RecieverIdentifierType": receiver_identifier_type,
+                "ResultURL": result_url,
+                "QueueTimeOutURL": queue_timeout_url,
+                "Remarks": remarks,
+                "Occasion": occasion
+            }
 
-    # Return the response from the dynamic QR code generation
-    return jsonify(dynamic_qr_response)
+            # Make a POST request to the reversal endpoint
+            reversal_url = 'https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request'
+            headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+
+            reversal_response = requests.post(reversal_url, json=reversal_data, headers=headers).json()
+
+            # Return the response from the transaction reversal
+            return jsonify(reversal_response)
+        else:
+            return jsonify({'error': 'Failed to retrieve access token.'}), 500
+
+    except Exception as e:
+        return json.dumps({'error': f'Error processing request: {str(e)}'})
 
 
 if __name__ == '__main__':
