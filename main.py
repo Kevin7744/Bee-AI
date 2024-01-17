@@ -108,5 +108,51 @@ def handle_stk_push_request():
     except Exception as e:
         return json.dumps({'error': f'Error processing request: {str(e)}'})
 
+
+@app.route('/register_c2b_urls', methods=['POST'])
+def register_c2b_urls():
+    # Extract data from the request
+    data = request.json
+    short_code = data.get('ShortCode')
+    response_type = data.get('ResponseType')
+    confirmation_url = data.get('ConfirmationURL')
+    validation_url = data.get('ValidationURL')
+
+    # Prepare the request body for C2B URL registration
+    registration_data = {
+        "ShortCode": short_code,
+        "ResponseType": response_type,
+        "ConfirmationURL": confirmation_url,
+        "ValidationURL": validation_url
+    }
+
+    # Make a POST request to the C2B URL registration endpoint
+    c2b_registration_url = 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl'
+    headers = {"Authorization": "Bearer YOUR_ACCESS_TOKEN", "Content-Type": "application/json"}
+    
+    registration_response = requests.post(c2b_registration_url, json=registration_data, headers=headers).json()
+
+    # Return the response from the C2B URL registration
+    return jsonify(registration_response)
+
+
+@app.route('/generate_dynamic_qr', methods=['POST'])
+def generate_dynamic_qr():
+    # Get data from the request
+    data = request.json
+
+    # Update the URL for the dynamic QR code generation API
+    dynamic_qr_url = 'https://sandbox.safaricom.co.ke/mpesa/qrcode/v1/generate'
+
+    # Send a POST request to generate the dynamic QR code
+    dynamic_qr_response = requests.post(dynamic_qr_url, json=data).json()
+
+    # Print the response from the dynamic QR code generation
+    print(dynamic_qr_response)
+
+    # Return the response from the dynamic QR code generation
+    return jsonify(dynamic_qr_response)
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
