@@ -9,7 +9,7 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage
 from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
-from agent_tools import extract_information
+from agent_tools import ExtractInformationTool
 
 
 load_dotenv()
@@ -28,7 +28,7 @@ system_message = SystemMessage(
 )
 
 tools = [
-    extract_information(),
+    ExtractInformationTool(),
 ]
 
 agent_kwargs = {
