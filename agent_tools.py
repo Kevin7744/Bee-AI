@@ -5,13 +5,13 @@ from typing import Type, ClassVar
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOpenAI
 from langchain.tools import BaseTool
-import instructor
+# import instructor
 
 load_dotenv()
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
-instructor.patch()
+# instructor.patch()
 
 # Extract key details from user input
 def extract_information(user_input: str):
@@ -41,7 +41,7 @@ def extract_information(user_input: str):
             {"role":"user", "content":prompt}
         ]
     )
-    extract_info_result = extract_info["choices"][0]["message"]["content"]
+    extract_info_result = extract_info
     return extract_info_result
 
 class ExtractInformationInput(BaseModel):
@@ -61,14 +61,14 @@ class ExtractInformationTool(BaseTool):
         )
     
 
-class PaymentDetails(BaseModel):
-    amount: int
-    account_number: int
+# class PaymentDetails(BaseModel):
+#     amount: int
+#     account_number: int
 
-payment: PaymentDetails = openai.chat.completions.create(
-    model="gpt-3.5-turbo",
-    response_model=PaymentDetails,
-    messages=[
-        {"role": "user", "content": "{user_input}"},
-    ]
-)
+# payment: PaymentDetails = openai.chat.completions.create(
+#     model="gpt-3.5-turbo",
+#     response_model=PaymentDetails,
+#     messages=[
+#         {"role": "user", "content": "{user_input}"},
+#     ]
+# )
