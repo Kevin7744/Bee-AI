@@ -1,12 +1,12 @@
-
 import re
 import requests
 from flask import Flask, request, jsonify
 from datetime import datetime
 import base64
-import json
 from dotenv import load_dotenv
-import os
+from pydantic import BaseModel, Field
+from typing import Optional, Type
+from langchain.tools import BaseTool
 
 load_dotenv()
 
@@ -24,15 +24,35 @@ def get_access_token():
         response.raise_for_status()
         result = response.json()
         access_token = result.get('access_token')
-        return access_token
+        return AccessTokenOutput(access_token=access_token, error_message=None)
     except requests.exceptions.RequestException as e:
-        return None
+        return AccessTokenOutput(access_token=None, error_message=str(e))
 
-def initiate_stk_push(amount, business_short_code):
+
+class AccessTokenOutput(BaseModel):
+    access_token: Optional[str] = Field(description="Generated access token")
+    error_message: Optional[str] = Field(description="Error message in case of failure")
+
+
+class PaymentTillInput(BaseModel):
+    amount: float = Field(description="The amount to be paid to the till or account number")
+    business_short_code: str = Field(description="The till or account number to be paid to")
+
+
+class PaymentTillOutput(BaseModel):
+    checkout_request_id: Optional[str] = Field(description="ID for the initiated initiate payment push request")
+    response_code: Optional[str] = Field(description="Response code from the initiate payment push request")
+    error_message: Optional[str] = Field(description="Error message in case of failure")
+
+
+def initiate_payment(amount: float, business_short_code: str):
+    # Calling the get_access_token method to obtain the access token
     access_token_response = get_access_token()
-    if isinstance(access_token_response, dict):
-        access_token = access_token_response.get('access_token')
+
+    if isinstance(access_token_response, AccessTokenOutput):
+        access_token = access_token_response.access_token
         if access_token:
+            # Rest of the code for STK push with the obtained access token
             process_request_url = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
             callback_url = 'http://yourcustomurl.local/'
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -41,7 +61,7 @@ def initiate_stk_push(amount, business_short_code):
             party_a = "254719321423"
             party_b = str(business_short_code)
             account_reference = 'Test'
-            transaction_desc = 'stkpush test'
+            transaction_desc = 'PaymentTill test'
 
             stk_push_headers = {
                 'Content-Type': 'application/json',
@@ -70,30 +90,46 @@ def initiate_stk_push(amount, business_short_code):
                 response_code = response_data.get('ResponseCode')
 
                 if response_code == "0":
-                    return jsonify({'CheckoutRequestID': checkout_request_id, 'ResponseCode': response_code})
+                    return PaymentTillOutput(checkout_request_id=checkout_request_id, response_code=response_code, error_message=None)
                 else:
-                    return jsonify({'error': f'STK push failed. Response Code: {response_code}'}), 500
+                    return PaymentTillOutput(checkout_request_id=None, response_code=None, error_message=f'STK push failed. Response Code: {response_code}')
             except requests.exceptions.RequestException as e:
-                return jsonify({'error': f'Error: {str(e)}'}), 500
+                return PaymentTillOutput(checkout_request_id=None, response_code=None, error_message=f'Error: {str(e)}')
         else:
-            return jsonify({'error': 'Access token not found.'}), 500
+            return PaymentTillOutput(checkout_request_id=None, response_code=None, error_message='Access token not found.')
     else:
-        return jsonify({'error': 'Failed to retrieve access token.'}), 500
+        return PaymentTillOutput(checkout_request_id=None, response_code=None, error_message='Failed to retrieve access token.')
 
 
-def generate_dynamic_qr(data):
-    access_token_response = get_access_token()
-    if 'access_token' in access_token_response:
-        access_token = access_token_response['access_token']
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {access_token}'
-        }
-        dynamic_qr_url = 'https://sandbox.safaricom.co.ke/mpesa/qrcode/v1/generate'
-        response = requests.post(dynamic_qr_url, json=data, headers=headers)
-        return response.json()
-    else:
-        return access_token_response
+class AccessTokenTool(BaseTool):
+    name = "get_access_token"
+    description = "Use this to generate an access token for authentication"
+
+    def _run(self):
+        return get_access_token()
+
+
+class PaymentTillTool(BaseTool):
+    name = "initiate_payment"
+    description = "Use this to initiate a payment, takes in amount and till/account number as parameters"
+    args_schema: Type[BaseModel] = PaymentTillInput
+
+    def _run(self, amount: float, business_short_code: str):
+        return initiate_payment(amount, business_short_code)
+
+# def generate_dynamic_qr(data):
+#     access_token_response = get_access_token()
+#     if 'access_token' in access_token_response:
+#         access_token = access_token_response['access_token']
+#         headers = {
+#             'Content-Type': 'application/json',
+#             'Authorization': f'Bearer {access_token}'
+#         }
+#         dynamic_qr_url = 'https://sandbox.safaricom.co.ke/mpesa/qrcode/v1/generate'
+#         response = requests.post(dynamic_qr_url, json=data, headers=headers)
+#         return response.json()
+#     else:
+#         return access_token_response
     
 
 # @app.route('/initiate_stk_push', methods=['POST'])

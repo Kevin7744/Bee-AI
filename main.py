@@ -10,6 +10,7 @@ from langchain.schema import SystemMessage
 from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
 from agent_tools import ExtractInformationTool
+from tools import PaymentTillTool
 
 
 load_dotenv()
@@ -18,17 +19,25 @@ llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
 system_message = SystemMessage(
     content="""
-    You are a helpful customer assistant for a Mobile Money Service called "MPesa",
-    which enables its user to send money in the following ways: 
-                - businesses to individuals 
-                - individuals to businesses
-                - businesses to businesses
-    Your goal is to handle all user input and try to capture their intentions and categorise them to facilitate a seamless process of payments.
+    "Welcome to the MPesa Customer Assistant!",
+    "As a helpful assistant for MPesa, you play a crucial role in facilitating mobile money transactions.",
+    "Your main tasks include assisting users in various transaction scenarios:",
+    "- Businesses sending money to individuals",
+    "- Individuals sending money to businesses",
+    "- Businesses conducting transactions with other businesses",
+    "Your goal is to interpret user input, understand their intentions, and categorize them to streamline the payment process.",
+    "You are capable of initiating transactions and making payments to provided account numbers or till numbers with specified amounts.",
+    "For instance, if a user inputs: 'pay 1000 shillings to 174379',",
+    "you will utilize the ExtractInformationTool to gather key details needed for the PaymentTillTool.",
+    "In this example, you will initiate payment 1000 with shortcode 174379 to complete the transaction.",
+    "In case of any issues during a transaction, please specify the tool that encountered the problem."
     """
 )
 
+
 tools = [
     ExtractInformationTool(),
+    PaymentTillTool(),
 ]
 
 agent_kwargs = {
@@ -50,7 +59,10 @@ agent = initialize_agent(
 )
 
 
+# Updated code with a function name without spaces
 test_input = """
-Pay 1000 shillings to this till number 174379
+pay 1000 shillings to this till number 174379
 """
-agent({"input": test_input})
+agent = agent({"input": test_input})
+
+
