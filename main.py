@@ -1,5 +1,4 @@
-import os
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 from langchain.agents import initialize_agent
 from langchain.agents import AgentType
 from langchain_community.chat_models import ChatOpenAI
@@ -8,6 +7,7 @@ from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
 from agent_tools import ExtractInformationTool
 from tools import PaymentTillTool
+from flask import Flask, request, jsonify
 
 load_dotenv()
 
@@ -55,16 +55,25 @@ agent = initialize_agent(
     memory=memory,
 )
 
-# Continuous conversation loop
-while True:
-    user_input = input("User: ")
-    if user_input.lower() == "end":
-        print("Thank you for using the MPesa Customer Assistant! If you have any further questions or need assistance in the future, feel free to ask. Have a great day!")
-        break
+# Create Flask app
+app = Flask(__name__)
 
+@app.route('/chat', methods=['POST'])
+def chat():
+    # Get user input from the request
+    user_input = request.json.get('input', '')
+    
     # Input the user message into the agent
     agent_response = agent({"input": user_input})
-    assistant_messages = agent_response.get("choices", [])
+    assistant_messages = agent_response.get("message", {}).get("messages", [])
 
-    # Print the assistant's response content
-    print("Assistant:", agent_response.get("message", {}).get("content", "No response from the assistant."))
+    # Prepare the assistant's response
+    response_content = "No response from the assistant."
+    if assistant_messages:
+        response_content = "\n".join(message.get("content", "") for message in assistant_messages)
+
+    # Return the response
+    return jsonify({"response": response_content})
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000, debug=True)
