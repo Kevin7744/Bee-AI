@@ -5,22 +5,19 @@ from typing import Type, ClassVar
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOpenAI
 from langchain.tools import BaseTool
-# import instructor
 
 load_dotenv()
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
-# instructor.patch()
-
-# Extract key details from user input
-def extract_information(user_input: str):
+def extract_information(user_input: str, conversation_memory: list):
     prompt = f"""
     USER_INPUT: {user_input}
+    MEMORY: {conversation_memory}
     ---
-    Above is an user input about what he/she wants to accomplish; Your goal is to identify and extract information needed to make a complete transaction:
-    1. The amount the user want to send.
-    2. The account number or till number the user want to send to.
+    Above is a user input about what he/she wants to accomplish; Your goal is to identify and extract information needed to make a complete transaction:
+    1. The amount the user wants to send.
+    2. The account number or till number the user wants to send to.
 
     Example:
     user_input = "I want to pay 100 to this till number 174379"
@@ -38,7 +35,8 @@ def extract_information(user_input: str):
     extract_info = openai.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role":"user", "content":prompt}
+            {"role": "user", "content": user_input},
+            {"role": "assistant", "content": f"MEMORY: {conversation_memory}"}
         ]
     )
     extract_info_result = extract_info
@@ -46,20 +44,20 @@ def extract_information(user_input: str):
 
 class ExtractInformationInput(BaseModel):
     user_input: str = Field(description="the user input")
+    conversation_memory: list = Field(description="list of messages in the conversation memory")
 
 class ExtractInformationTool(BaseTool):
     name = "extract_information"
-    description ="use this to extract key information from user input and return result. Can only be amount and Till number or account number IN INTEGER TYPE"
+    description = "use this to extract key information from user input and return result. Can only be amount and Till number or account number IN INTEGER TYPE"
     args_schema: Type[BaseModel] = ExtractInformationInput  
 
-    def _run(self, user_input: str):
-        return extract_information(user_input)
+    def _run(self, user_input: str, conversation_memory: list):
+        return extract_information(user_input, conversation_memory)
     
     def _arun(self, url: str):
         raise NotImplementedError(
-            "Get_stock_perfomance does not support async"
+            "Get_stock_performance does not support async"
         )
-    
 
 # class PaymentDetails(BaseModel):
 #     amount: int

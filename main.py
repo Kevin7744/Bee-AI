@@ -1,6 +1,5 @@
-# Import the necessary packages
 import os
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 from langchain.agents import initialize_agent
 from langchain.agents import AgentType
 from langchain_community.chat_models import ChatOpenAI
@@ -36,11 +35,15 @@ system_message = SystemMessage(
 # Define the tools and agent settings
 tools = [ExtractInformationTool(), PaymentTillTool()]
 agent_kwargs = {
-    "extra_prompt_nessage": [MessagesPlaceholder(variable_name="memory")],
+    "extra_prompt_message": [MessagesPlaceholder(variable_name="memory")],
     "system_message": system_message,
 }
+
 memory = ConversationSummaryBufferMemory(
-    memory_key="memory", return_messages=True, llm=llm, max_token_limit=250
+    memory_key="memory",
+    return_messages=True,
+    llm=llm,
+    max_token_limit=250,
 )
 
 # Create the agent
@@ -53,6 +56,9 @@ agent = initialize_agent(
     memory=memory,
 )
 
+# Memory structure to maintain
+conversation_memory = []
+
 # Continuous conversation loop
 while True:
     user_input = input("User: ")
@@ -61,8 +67,13 @@ while True:
         break
 
     # Input the user message into the agent
-    agent_response = agent({"input": user_input})
+    agent_response = agent({"input": user_input, "memory": conversation_memory})
     assistant_messages = agent_response.get("choices", [])
+
+    # Update memory with assistant messages
+    if assistant_messages:
+        assistant_memory_messages = assistant_messages[0].get("message", {}).get("messages", [])
+        conversation_memory.extend(assistant_memory_messages)
 
     # Print the assistant's response content
     print("Assistant:", agent_response.get("message", {}).get("content", "No response from the assistant."))
