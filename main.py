@@ -1,22 +1,20 @@
-from dotenv import load_dotenv
-from langchain.agents import initialize_agent
-from langchain.agents import AgentType
+from flask import Flask, request, jsonify
+from langchain.agents import initialize_agent, AgentType
 from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage
 from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
 from agent_tools import ExtractInformationTool
 from tools import PaymentTillTool
-from flask import Flask, request, jsonify
+import json
 
-load_dotenv()
+app = Flask(__name__)
 
 # Initialize ChatOpenAI with the specified model
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
 # Define the system message
-system_message = SystemMessage(
-    content="""
+system_message = SystemMessage(content="""
     "Welcome to the MPesa Customer Assistant!",
     "As a helpful assistant for MPesa, you play a crucial role in facilitating mobile money transactions.",
     "Your main tasks include assisting users in various transaction scenarios:",
@@ -29,21 +27,18 @@ system_message = SystemMessage(
     "you will utilize the ExtractInformationTool to gather key details needed for the PaymentTillTool.",
     "In this example, you will initiate payment 1000 with shortcode 174379 to complete the transaction.",
     "In case of any issues during a transaction, please specify the tool that encountered the problem."
-    """
-)
+    """)
 
 # Define the tools and agent settings
-tools = [
-    ExtractInformationTool(), 
-    PaymentTillTool()
-]
+tools = [ExtractInformationTool(), PaymentTillTool()]
 agent_kwargs = {
-    "extra_prompt_nessage": [MessagesPlaceholder(variable_name="memory")],
+    "extra_prompt_message": [MessagesPlaceholder(variable_name="memory")],
     "system_message": system_message,
 }
-memory = ConversationSummaryBufferMemory(
-    memory_key="memory", return_messages=True, llm=llm, max_token_limit=250
-)
+memory = ConversationSummaryBufferMemory(memory_key="memory",
+                                         return_messages=True,
+                                         llm=llm,
+                                         max_token_limit=250)
 
 # Create the agent
 agent = initialize_agent(
@@ -55,25 +50,29 @@ agent = initialize_agent(
     memory=memory,
 )
 
-# Create Flask app
-app = Flask(__name__)
 
-@app.route('/chat', methods=['POST'])
+# Continuous conversation loop
+@app.route("/chat", methods=["POST"])
 def chat():
-    # Get user input from the request
-    user_input = request.json.get('input', '')
-    
-    # Input the user message into the agent
-    agent_response = agent({"input": user_input})
-    assistant_messages = agent_response.get("message", {}).get("messages", [])
+  user_input = request.json.get("input", "")
 
-    # Prepare the assistant's response
-    response_content = "No response from the assistant."
-    if assistant_messages:
-        response_content = "\n".join(message.get("content", "") for message in assistant_messages)
+  if user_input.lower() == "end":
+    return jsonify({
+        "message":
+        "Thank you for using the MPesa Customer Assistant! If you have any further questions or need assistance in the future, feel free to ask. Have a great day!"
+    })
 
-    # Return the response
-    return jsonify({"response": response_content})
+  # Input the user message into the agent
+  agent_response = agent({"input": user_input})
+  print("Agent Response:", agent_response)  # Print for debugging
+
+  # Access the assistant's response content from the output field
+  assistant_message_content = agent_response.get(
+      "output", "No response from the assistant.")
+
+  # Return the assistant's response content
+  return jsonify({"message": assistant_message_content})
+
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+  app.run(host="0.0.0.0", port=5000, debug=True)
