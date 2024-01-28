@@ -67,13 +67,18 @@ while True:
         break
 
     # Input the user message into the agent
-    agent_response = agent({"input": user_input, "memory": conversation_memory})
+    agent_response = agent({"input": user_input, "conversation_memory": conversation_memory})
     assistant_messages = agent_response.get("choices", [])
 
-    # Update memory with assistant messages
     if assistant_messages:
+        # Update memory with assistant messages
         assistant_memory_messages = assistant_messages[0].get("message", {}).get("messages", [])
         conversation_memory.extend(assistant_memory_messages)
 
-    # Print the assistant's response content
-    print("Assistant:", agent_response.get("message", {}).get("content", "No response from the assistant."))
+        # Manually update tool state with conversation memory
+        tool_state = {"conversation_memory": conversation_memory}
+        agent.tools[0].update_state(tool_state) 
+        # Print the assistant's response content
+        print("Assistant:", assistant_messages[0].get("message", {}).get("content", "No response from the assistant."))
+    else:
+        print("Assistant: No response from the assistant.")
