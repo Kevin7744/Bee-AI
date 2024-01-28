@@ -1,8 +1,6 @@
 # Import the necessary packages
 import os
 from dotenv import load_dotenv, find_dotenv
-import openai
-
 from langchain.agents import initialize_agent
 from langchain.agents import AgentType
 from langchain_community.chat_models import ChatOpenAI
@@ -12,11 +10,12 @@ from langchain.memory import ConversationSummaryBufferMemory
 from agent_tools import ExtractInformationTool
 from tools import PaymentTillTool
 
-
 load_dotenv()
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+
+# Initialize ChatOpenAI with the specified model
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
+# Define the system message
 system_message = SystemMessage(
     content="""
     "Welcome to the MPesa Customer Assistant!",
@@ -34,21 +33,17 @@ system_message = SystemMessage(
     """
 )
 
-
-tools = [
-    ExtractInformationTool(),
-    PaymentTillTool(),
-]
-
+# Define the tools and agent settings
+tools = [ExtractInformationTool(), PaymentTillTool()]
 agent_kwargs = {
     "extra_prompt_nessage": [MessagesPlaceholder(variable_name="memory")],
     "system_message": system_message,
 }
-
 memory = ConversationSummaryBufferMemory(
     memory_key="memory", return_messages=True, llm=llm, max_token_limit=250
 )
 
+# Create the agent
 agent = initialize_agent(
     tools,
     llm,
@@ -58,11 +53,16 @@ agent = initialize_agent(
     memory=memory,
 )
 
+# Continuous conversation loop
+while True:
+    user_input = input("User: ")
+    if user_input.lower() == "end":
+        print("Thank you for using the MPesa Customer Assistant! If you have any further questions or need assistance in the future, feel free to ask. Have a great day!")
+        break
 
-# Updated code with a function name without spaces
-test_input = """
-pay 1000 shillings to this till number 174379
-"""
-agent = agent({"input": test_input})
+    # Input the user message into the agent
+    agent_response = agent({"input": user_input})
+    assistant_messages = agent_response.get("choices", [])
 
-
+    # Print the assistant's response content
+    print("Assistant:", agent_response.get("message", {}).get("content", "No response from the assistant."))
