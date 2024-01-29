@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+import os
+from twilio.twiml.messaging_response import MessagingResponse
 from langchain.agents import initialize_agent, AgentType
 from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage
@@ -6,7 +8,6 @@ from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
 from agent_tools import ExtractInformationTool
 from tools import PaymentTillTool
-import json
 
 app = Flask(__name__)
 
@@ -54,25 +55,31 @@ agent = initialize_agent(
 # Continuous conversation loop
 @app.route("/chat", methods=["POST"])
 def chat():
-  user_input = request.json.get("input", "")
+    try:
+        user_input = request.form["Body"]
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400  # Bad Request for missing or invalid Body
 
-  if user_input.lower() == "end":
-    return jsonify({
-        "message":
-        "Thank you for using the MPesa Customer Assistant! If you have any further questions or need assistance in the future, feel free to ask. Have a great day!"
-    })
+    if user_input.lower() == "end":
+        return jsonify({
+            "message": "Thank you for using the MPesa Customer Assistant! If you have any further questions or need assistance in the future, feel free to ask. Have a great day!"
+        })
 
-  # Input the user message into the agent
-  agent_response = agent({"input": user_input})
-  print("Agent Response:", agent_response)  # Print for debugging
+    # Input the user message into the agent
+    agent_response = agent({"input": user_input})
+    print("Agent Response:", agent_response)  # Print for debugging
 
-  # Access the assistant's response content from the output field
-  assistant_message_content = agent_response.get(
-      "output", "No response from the assistant.")
+    # Access the assistant's response content from the output field
+    assistant_message_content = agent_response.get(
+        "output", "No response from the assistant.")
 
-  # Return the assistant's response content
-  return jsonify({"message": assistant_message_content})
+    # Prepare Twilio response
+    twilio_resp = MessagingResponse()
+    twilio_resp.message(assistant_message_content)
+
+    # Return Twilio response
+    return str(twilio_resp)
 
 
 if __name__ == "__main__":
-  app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
