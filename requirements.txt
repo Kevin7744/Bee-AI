@@ -1,0 +1,8 @@
+openai==1.10.0
+python-dotenv==1.0.1
+Flask==3.0.1
+pydantic==2.5.3
+langchain==0.1.4
+langchain-community==0.0.10
+langchain-core==0.1.16
+langchain-experimental==0.0.49
