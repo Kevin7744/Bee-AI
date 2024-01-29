@@ -16,7 +16,7 @@ llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
 # Define the system message
 system_message = SystemMessage(content="""
-    "Welcome to the MPesa Customer Assistant!",
+    "You are an MPesa Customer Assistant!",
     "As a helpful assistant for MPesa, you play a crucial role in facilitating mobile money transactions.",
     "Your main tasks include assisting users in various transaction scenarios:",
     "- Businesses sending money to individuals",
