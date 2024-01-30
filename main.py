@@ -6,8 +6,8 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage
 from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
-from .Agent_Tools.agent_tools import ExtractInformationTool
-from .Functions.Mpesa.tools import PaymentTillTool
+from .Agent_Tools.tools import ExtractInformationTool
+from .Functions.Mpesa.functions import PaymentTillTool
 app = Flask(__name__)
 
 # Initialize ChatOpenAI with the specified model
