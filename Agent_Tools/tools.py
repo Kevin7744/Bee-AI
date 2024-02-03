@@ -7,53 +7,82 @@ from langchain.tools import BaseTool
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 def extract_till_information(user_input: str):
+    # Construct the prompt
     prompt = f"""
     USER_INPUT: {user_input}
     ---
-    Above is a user input about what he/she wants to accomplish; Your goal is to identify and extract information needed to make a complete transaction:
+    The user input suggests a transaction. Your goal is to identify and extract key information needed for the payment:
     1. The amount the user wants to send.
     2. The account number or till number the user wants to send to.
+    3. The phone number of the user making the payment.
+    4. Determine whether it's a till payment or a paybill payment.
+    5. If it's a till payment, set the default value for account_reference to "Till".
 
     Example:
-    user_input = "I want to pay 100 to this till number 174379"
-    ANSWER = "amount: 100
-              till number: 174379"
-    user_input = "pay hundred shillings to this till number 174379"
-    ANSWER = "amount: 100
-              till number: 174379"
+    - User input: "send 1000 to 174379"
+      Extracted Information:
+        - amount: 1000
+        - business_short_code: 174379
+        - party_a: [phone number extracted from user input]
+        - transaction_type: CustomerBuyGoodsOnline
+        - account_reference: Till [default value for CustomerBuyGoodsOnline transactions]
 
-    If all info above is collected, return the amount and account number, else return NO; (RETURN ONLY THE 'AMOUNT' AND 'ACCOUNT' NUMBER IN INTEGER TYPE ELSE NO).
-
-    ANSWER
+    - User input: "send 1000 to 174379 the account is SAFARI"
+      Extracted Information:
+        - amount: 1000
+        - business_short_code: 174379
+        - party_a: [phone number extracted from user input]
+        - transaction_type: CustomerPayBillOnline
+        - account_reference: SAFARI
     """
 
-    extract_info = openai.chat.completions.create(
+    # Make a request to OpenAI API
+    extract_info = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
             {"role": "user", "content": prompt},
         ]
     )
-    extract_info_result = extract_info
-    return extract_info_result
+
+    # Extracting information from GPT-4 response
+    extracted_info = extract_info['choices'][0]['message']['content']
+    
+    # Process the extracted information (parse from the extracted_info string)
+    # ...
+
+    return extracted_info
+
 
 class ExtractTillInformationInput(BaseModel):
     user_input: str = Field(description="the user input")
 
+class ExtractTillInformationTool(BaseTool):
+    name = "extract_information"
+    description = "use this to extract key information from user input and return result. Can only be amount and Till number or account number IN INTEGER TYPE"
+    args_schema: Type[BaseModel] = ExtractTillInformationInput
+
+    def _run(self, user_input: str):
+        # Call the external function to extract information
+        return extract_till_information(user_input)
+
+    def _arun(self, url: str):
+        raise NotImplementedError("Get_stock_performance does not support async")
+
+class ExtractTillInformationInput(BaseModel):
+    user_input: str = Field(description="the user input")
 
 class ExtractTillInformationTool(BaseTool):
     name = "extract_information"
     description = "use this to extract key information from user input and return result. Can only be amount and Till number or account number IN INTEGER TYPE"
-    args_schema: Type[BaseModel] = ExtractTillInformationInput  
+    args_schema: Type[BaseModel] = ExtractTillInformationInput
 
     def _run(self, user_input: str):
         return extract_till_information(user_input)
 
     def _arun(self, url: str):
-        raise NotImplementedError(
-            "Get_stock_performance does not support async"
-        )
-    
-    
+        raise NotImplementedError("Get_stock_performance does not support async") 
+
+
 def extract_qr_code_information(user_input: str):
     prompt = f"""
     USER_INPUT: {user_input}

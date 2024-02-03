@@ -34,18 +34,26 @@ class AccessTokenOutput(BaseModel):
     error_message: Optional[str] = Field(description="Error message in case of failure")
 
 
+class AccessTokenTool(BaseTool):
+    name = "get_access_token"
+    description = "Use this to generate an access token for authentication"
+
+    def _run(self):
+        return get_access_token()
+
 class PaymentTillInput(BaseModel):
     amount: float = Field(description="The amount to be paid to the till or account number")
     business_short_code: str = Field(description="The till or account number to be paid to")
-
+    party_a: str = Field(description="The phone number sending money")
+    transaction_type: str = Field(description="Transaction type. Use 'CustomerPayBillOnline' for Paybill numbers or 'CustomerBuyGoodsOnline' for till.")
+    account_reference: str = Field(description="Account reference for the transaction")
 
 class PaymentTillOutput(BaseModel):
     checkout_request_id: Optional[str] = Field(description="ID for the initiated initiate payment push request")
     response_code: Optional[str] = Field(description="Response code from the initiate payment push request")
     error_message: Optional[str] = Field(description="Error message in case of failure")
 
-
-def initiate_payment(amount: float, business_short_code: str):
+def initiate_payment(amount: float, business_short_code: str, party_a: float, transaction_type: str, account_reference: str):
     # Calling the get_access_token method to obtain the access token
     access_token_response = get_access_token()
 
@@ -58,9 +66,7 @@ def initiate_payment(amount: float, business_short_code: str):
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
             passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
             password = base64.b64encode((str(business_short_code) + passkey + timestamp).encode()).decode()
-            party_a = "254719321423"
-            party_b = str(business_short_code)
-            account_reference = 'Test'
+            party_b = business_short_code
             transaction_desc = 'PaymentTill test'
 
             stk_push_headers = {
@@ -72,7 +78,7 @@ def initiate_payment(amount: float, business_short_code: str):
                 'BusinessShortCode': business_short_code,
                 'Password': password,
                 'Timestamp': timestamp,
-                'TransactionType': 'CustomerPayBillOnline',
+                'TransactionType': transaction_type,
                 'Amount': amount,
                 'PartyA': party_a,
                 'PartyB': party_b,
@@ -99,15 +105,6 @@ def initiate_payment(amount: float, business_short_code: str):
             return PaymentTillOutput(checkout_request_id=None, response_code=None, error_message='Access token not found.')
     else:
         return PaymentTillOutput(checkout_request_id=None, response_code=None, error_message='Failed to retrieve access token.')
-
-
-class AccessTokenTool(BaseTool):
-    name = "get_access_token"
-    description = "Use this to generate an access token for authentication"
-
-    def _run(self):
-        return get_access_token()
-
 
 class PaymentTillTool(BaseTool):
     name = "initiate_payment"
