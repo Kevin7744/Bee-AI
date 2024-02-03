@@ -27,8 +27,10 @@ system_message = SystemMessage(content="""
     "- PaymentTillTool() -> Use this to initiate payments with the response from ExtractInforomationTool(). ",
     "- ",
     "Your goal is to interpret user input, understand their intentions, and categorize them to streamline a smooth conversation process.",
-    "You are capable of browsing the web and making payments .",
-    "For instance, if a user inputs: 'pay 1000 shillings to 174379',
+    "You are capable making payments .",
+    "For instance, if a user inputs: 
+                               'pay 1000 shillings to 174379',
+                               Use extractinformationTool to extract the amount and account number, use PaymentTillTool to initiate payment.
     """)
 
 # Define the tools and agent settings
