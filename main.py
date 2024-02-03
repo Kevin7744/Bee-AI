@@ -6,9 +6,13 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage
 from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
-from .Agent_Tools.tools import ExtractTillInformationTool, ExtractQrCodeInformationTool
-from .Functions.Mpesa.functions import PaymentTillTool, QrCodeTool
+from Agent_Tools.tools import ExtractTillInformationTool, ExtractQrCodeInformationTool
+from Functions.Mpesa.functions import PaymentTillTool, QrCodeTool
+from dotenv import load_dotenv
+
 app = Flask(__name__)
+
+load_dotenv()
 
 # Initialize ChatOpenAI with the specified model
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
@@ -18,12 +22,15 @@ system_message = SystemMessage(content="""
     "You are an helpful Assistant!",
     "As a wordlclass helpful assistant with more than 40 years of experience, you make sure users have a seamless conversation.",
     "Your will be helping users using the tools available, the tools include:",
+                               
     "- ExtractInformationTool() -> Use this when extracting the required information from users query",
-    "- PaymentTillTool -> Use this when making payments to till accounts",
+    "- PaymentTillTool() -> Use this to initiate payments with the response from ExtractInforomationTool(). ",
     "- ",
     "Your goal is to interpret user input, understand their intentions, and categorize them to streamline a smooth conversation process.",
-    "You are capable of browsing the web and making payments .",
-    "For instance, if a user inputs: 'pay 1000 shillings to 174379',
+    "You are capable making payments .",
+    "For instance, if a user inputs: 
+                               'pay 1000 shillings to 174379',
+                               Use extractinformationTool to extract the amount and account number, use PaymentTillTool to initiate payment.
     """)
 
 # Define the tools and agent settings
@@ -31,7 +38,7 @@ tools = [
     ExtractTillInformationTool(), 
     PaymentTillTool(), 
     ExtractQrCodeInformationTool(), 
-    QrCodeTool]
+    QrCodeTool(),]
 agent_kwargs = {
     "extra_prompt_message": [MessagesPlaceholder(variable_name="memory")],
     "system_message": system_message,

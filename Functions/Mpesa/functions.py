@@ -44,7 +44,7 @@ class PaymentTillOutput(BaseModel):
     response_code: Optional[str] = Field(description="Response code from the initiate payment push request")
     error_message: Optional[str] = Field(description="Error message in case of failure")
 
-#update
+
 def initiate_payment(amount: float, business_short_code: str):
     # Calling the get_access_token method to obtain the access token
     access_token_response = get_access_token()
@@ -119,18 +119,20 @@ class PaymentTillTool(BaseTool):
 
 
 class QrCodeInput(BaseModel):
-    merchant_name: constr(description="Name of the Company/M-Pesa Merchant Name")
-    ref_no: constr(description="Transaction Reference")
+    merchant_name: str = Field(description="Name of the Company/M-Pesa Merchant Name")
+    ref_no: str = Field(description="Transaction Reference")
     amount: float = Field(description="The total amount for the sale/transaction")
-    trx_code: constr(description="Transaction Type", enum=["BG", "WA", "PB", "SM", "SB"])
-    cpi: constr(description="Credit Party Identifier. Can be a Mobile Number, Business Number, Agent Till, Paybill or Business number, or Merchant Buy Goods")
-    size: constr(description="Size of the QR code image in pixels. QR code image will always be a square image")
+    trx_code: str = Field(description="Transaction Type", enum=["BG", "WA", "PB", "SM", "SB"])
+    cpi: str = Field(description="Credit Party Identifier. Can be a Mobile Number, Business Number, Agent Till, Paybill or Business number, or Merchant Buy Goods")
+    size: str = Field(description="Size of the QR code image in pixels. QR code image will always be a square image")
+
+from pydantic import BaseModel, Field
 
 class QrCodeOutput(BaseModel):
-    response_code: constr(description="Used to return the Transaction Type")
-    request_id: constr(description="An alpha-numeric string of fewer than 20 characters")
-    response_description: constr(description="This is a response describing the status of the transaction")
-    qr_code: constr(description="QR Code Image/Data/String")
+    response_code: str = Field(description="Used to return the Transaction Type")
+    request_id: str = Field(description="An alpha-numeric string of fewer than 20 characters")
+    response_description: str = Field(description="This is a response describing the status of the transaction")
+    qr_code: str = Field(description="QR Code Image/Data/String")
 
 def generate_dynamic_qr(data):
     access_token_response = get_access_token()
