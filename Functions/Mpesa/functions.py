@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 from datetime import datetime
 import base64
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
 from typing import Optional, Type
 from langchain.tools import BaseTool
 
@@ -117,88 +117,46 @@ class PaymentTillTool(BaseTool):
     def _run(self, amount: float, business_short_code: str):
         return initiate_payment(amount, business_short_code)
 
-# def generate_dynamic_qr(data):
-#     access_token_response = get_access_token()
-#     if 'access_token' in access_token_response:
-#         access_token = access_token_response['access_token']
-#         headers = {
-#             'Content-Type': 'application/json',
-#             'Authorization': f'Bearer {access_token}'
-#         }
-#         dynamic_qr_url = 'https://sandbox.safaricom.co.ke/mpesa/qrcode/v1/generate'
-#         response = requests.post(dynamic_qr_url, json=data, headers=headers)
-#         return response.json()
-#     else:
-#         return access_token_response
-    
 
-# @app.route('/initiate_stk_push', methods=['POST'])
-# def handle_stk_push_request():
-#     try:
-#         user_input = request.json['user_input']
+class QrCodeInput(BaseModel):
+    merchant_name: constr(description="Name of the Company/M-Pesa Merchant Name")
+    ref_no: constr(description="Transaction Reference")
+    amount: float = Field(description="The total amount for the sale/transaction")
+    trx_code: constr(description="Transaction Type", enum=["BG", "WA", "PB", "SM", "SB"])
+    cpi: constr(description="Credit Party Identifier. Can be a Mobile Number, Business Number, Agent Till, Paybill or Business number, or Merchant Buy Goods")
+    size: constr(description="Size of the QR code image in pixels. QR code image will always be a square image")
 
-#         # Extract payment details using regex
-#         amount, business_short_code = extract_payment_details(user_input)
+class QrCodeOutput(BaseModel):
+    response_code: constr(description="Used to return the Transaction Type")
+    request_id: constr(description="An alpha-numeric string of fewer than 20 characters")
+    response_description: constr(description="This is a response describing the status of the transaction")
+    qr_code: constr(description="QR Code Image/Data/String")
 
-#         if amount is not None and business_short_code is not None:
-#             # Use the extracted details to initiate STK push
-#             response = initiate_stk_push(amount, business_short_code)
-#             return response
-#         else:
-#             return jsonify({'error': 'Invalid user input format. Please provide amount and business code.'}), 400
+def generate_dynamic_qr(data):
+    access_token_response = get_access_token()
+    if 'access_token' in access_token_response:
+        access_token = access_token_response['access_token']
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {access_token}'
+        }
+        dynamic_qr_url = 'https://sandbox.safaricom.co.ke/mpesa/qrcode/v1/generate'
+        response = requests.post(dynamic_qr_url, json=data, headers=headers)
+        return response.json()
+    else:
+        return access_token_response
 
-#     except Exception as e:
-#         return json.dumps({'error': f'Error processing request: {str(e)}'})
+class QrCodeTool(BaseTool):
+    name = "generate_dynamic_qr"
+    description = "Tool for generating dynamic QR code"
+    args_schema = QrCodeInput
+    result_schema = QrCodeOutput
 
-# @app.route('/register_c2b_urls', methods=['POST'])
-# def register_c2b_urls():
-#     try:
-#         # Extract data from the request
-#         data = request.json
-#         short_code = data.get('ShortCode')
-#         response_type = data.get('ResponseType')
-#         confirmation_url = data.get('ConfirmationURL')
-#         validation_url = data.get('ValidationURL')
-
-#         # Obtain the access token
-#         access_token = get_access_token()
-        
-#         if access_token:
-#             # Prepare the request body for C2B URL registration
-#             registration_data = {
-#                 "ShortCode": short_code,
-#                 "ResponseType": response_type,
-#                 "ConfirmationURL": confirmation_url,
-#                 "ValidationURL": validation_url
-#             }
-
-#             # Make a POST request to the C2B URL registration endpoint
-#             c2b_registration_url = 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl'
-#             headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-            
-#             registration_response = requests.post(c2b_registration_url, json=registration_data, headers=headers).json()
-
-#             # Return the response from the C2B URL registration
-#             return jsonify(registration_response)
-#         else:
-#             return jsonify({'error': 'Failed to retrieve access token.'}), 500
-
-#     except Exception as e:
-#         return json.dumps({'error': f'Error processing request: {str(e)}'})
+    def _run(self, data: QrCodeInput):
+        return generate_dynamic_qr(data)
 
 
 
-# @app.route('/generate_dynamic_qr', methods=['POST'])
-# def generate_dynamic_qr_endpoint():
-#     try:
-#         data = request.json
-#         response = generate_dynamic_qr(data)
-#         return jsonify(response)
-#     except Exception as e:
-#         return jsonify({'error': f'Error processing request: {str(e)}'}), 500
-
-
-# @app.route('/reverse_transaction', methods=['POST'])
 # def reverse_transaction():
 #     try:
 #         # Extract data from the request
@@ -249,7 +207,6 @@ class PaymentTillTool(BaseTool):
 #         return json.dumps({'error': f'Error processing request: {str(e)}'})
 
 
-# @app.route('/check_transaction_status', methods=['POST'])
 # def check_transaction_status():
 #     try:
 #         # Get data from the request

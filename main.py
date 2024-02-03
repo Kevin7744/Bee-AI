@@ -6,8 +6,8 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage
 from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
-from .Agent_Tools.tools import ExtractInformationTool
-from .Functions.Mpesa.functions import PaymentTillTool
+from .Agent_Tools.tools import ExtractTillInformationTool, ExtractQrCodeInformationTool
+from .Functions.Mpesa.functions import PaymentTillTool, QrCodeTool
 app = Flask(__name__)
 
 # Initialize ChatOpenAI with the specified model
@@ -15,22 +15,23 @@ llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
 # Define the system message
 system_message = SystemMessage(content="""
-    "You are an MPesa Customer Assistant!",
-    "As a helpful assistant for MPesa, you play a crucial role in facilitating mobile money transactions.",
-    "Your main tasks include assisting users in various transaction scenarios:",
-    "- Businesses sending money to individuals",
-    "- Individuals sending money to businesses",
-    "- Businesses conducting transactions with other businesses",
-    "Your goal is to interpret user input, understand their intentions, and categorize them to streamline the payment process.",
-    "You are capable of initiating transactions and making payments to provided account numbers or till numbers with specified amounts.",
-    "For instance, if a user inputs: 'pay 1000 shillings to 174379',",
-    "you will utilize the ExtractInformationTool to gather key details needed for the PaymentTillTool.",
-    "In this example, you will initiate payment 1000 with shortcode 174379 to complete the transaction.",
-    "In case of any issues during a transaction, please specify the tool that encountered the problem."
+    "You are an helpful Assistant!",
+    "As a wordlclass helpful assistant with more than 40 years of experience, you make sure users have a seamless conversation.",
+    "Your will be helping users using the tools available, the tools include:",
+    "- ExtractInformationTool() -> Use this when extracting the required information from users query",
+    "- PaymentTillTool -> Use this when making payments to till accounts",
+    "- ",
+    "Your goal is to interpret user input, understand their intentions, and categorize them to streamline a smooth conversation process.",
+    "You are capable of browsing the web and making payments .",
+    "For instance, if a user inputs: 'pay 1000 shillings to 174379',
     """)
 
 # Define the tools and agent settings
-tools = [ExtractInformationTool(), PaymentTillTool()]
+tools = [
+    ExtractTillInformationTool(), 
+    PaymentTillTool(), 
+    ExtractQrCodeInformationTool(), 
+    QrCodeTool]
 agent_kwargs = {
     "extra_prompt_message": [MessagesPlaceholder(variable_name="memory")],
     "system_message": system_message,
@@ -61,7 +62,7 @@ def chat():
 
     if user_input.lower() == "end":
         return jsonify({
-            "message": "Thank you for using the MPesa Customer Assistant! If you have any further questions or need assistance in the future, feel free to ask. Have a great day!"
+            "message": "Have a good day!"
         })
 
     # Input the user message into the agent
