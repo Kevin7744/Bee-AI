@@ -44,7 +44,7 @@ class PaymentTillOutput(BaseModel):
     response_code: Optional[str] = Field(description="Response code from the initiate payment push request")
     error_message: Optional[str] = Field(description="Error message in case of failure")
 
-
+#update
 def initiate_payment(amount: float, business_short_code: str):
     # Calling the get_access_token method to obtain the access token
     access_token_response = get_access_token()
