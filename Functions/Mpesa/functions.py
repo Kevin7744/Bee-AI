@@ -111,8 +111,8 @@ class PaymentTillTool(BaseTool):
     description = "Use this to initiate a payment, takes in amount and till/account number as parameters"
     args_schema: Type[BaseModel] = PaymentTillInput
 
-    def _run(self, amount: float, business_short_code: str):
-        return initiate_payment(amount, business_short_code)
+    def _run(self, amount: float, business_short_code: str, party_a: float, transaction_type: str, account_reference: str):
+        return initiate_payment(amount, business_short_code, party_a, transaction_type, account_reference)
 
 
 class QrCodeInput(BaseModel):

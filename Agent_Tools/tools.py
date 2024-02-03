@@ -23,7 +23,7 @@ def extract_till_information(user_input: str):
       Extracted Information:
         - amount: 1000
         - business_short_code: 174379
-        - party_a: [phone number extracted from user input]
+        - party_a: [phone number extracted from user input, always add "+" to the start if numbers starts with 254 else add "+254" if number starts with 07.]
         - transaction_type: CustomerBuyGoodsOnline
         - account_reference: Till [default value for CustomerBuyGoodsOnline transactions]
 
