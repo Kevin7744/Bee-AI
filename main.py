@@ -7,6 +7,7 @@ from langchain.schema import SystemMessage
 from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
 from Agent_Tools.tools import ExtractTillInformationTool, ExtractQrCodeInformationTool
+from Functions.Browsing.functions import SearchTool
 from Functions.Mpesa.functions import PaymentTillTool, QrCodeTool
 from dotenv import load_dotenv
 
@@ -25,12 +26,13 @@ system_message = SystemMessage(content="""
                                
     "- ExtractInformationTool() -> Use this when extracting the required information from users query",
     "- PaymentTillTool() -> Use this to initiate payments with the response from ExtractInforomationTool(). ",
-    "- ",
+    "- ExtractQrCodeInformationTool(), 
+    "-  QrCodeTool(),"
+    "-  SearchTool(),",
     "Your goal is to interpret user input, understand their intentions, and categorize them to streamline a smooth conversation process.",
-    "You are capable making payments .",
-    "For instance, if a user inputs: 
-                               'pay 1000 shillings to 174379',
-                               Use extractinformationTool to extract the amount and account number, use PaymentTillTool to initiate payment.
+    "You are capable of browsing the web using the search tool and making payments .",
+    "For instance, if a user inputs: 'pay 1000 shillings to 174379',"
+    "Use the  search to add Emojis in your conversation"
     """)
 
 # Define the tools and agent settings
@@ -38,11 +40,15 @@ tools = [
     ExtractTillInformationTool(), 
     PaymentTillTool(), 
     ExtractQrCodeInformationTool(), 
-    QrCodeTool(),]
+    QrCodeTool(),
+    SearchTool(),
+]
+
 agent_kwargs = {
     "extra_prompt_message": [MessagesPlaceholder(variable_name="memory")],
     "system_message": system_message,
 }
+
 memory = ConversationSummaryBufferMemory(memory_key="memory",
                                          return_messages=True,
                                          llm=llm,
@@ -56,8 +62,8 @@ agent = initialize_agent(
     verbose=True,
     agent_kwargs=agent_kwargs,
     memory=memory,
+    user_input_key="input"
 )
-
 
 # Continuous conversation loop
 @app.route("/chat", methods=["POST"])
