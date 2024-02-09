@@ -47,3 +47,4 @@ In future updates, we plan to add the following features and integrations:
 
 
 ## License
+licensed under the [MIT License](LICENSE)
