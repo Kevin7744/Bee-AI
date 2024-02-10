@@ -8,6 +8,7 @@ from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
 from Agent_Tools.tools import ExtractTillInformationTool, ExtractQrCodeInformationTool
 from Functions.Browsing.functions import SearchTool
+from Functions.Apify.functions import LoadApifyDatasetTool
 from Functions.Mpesa.functions import PaymentTillTool, QrCodeTool
 from dotenv import load_dotenv
 
@@ -27,6 +28,7 @@ system_message = SystemMessage(content="""
     "- ExtractQrCodeInformationTool(), -> Use this to extract qrcode informations
     "- QrCodeTool(), -> use this to generate qrcode" 
     "- SearchTool(), -> Use this to do a search on the web using googleserper",
+    "- CrawlWebsiteTool, -> Use this to crawl websites"
     " Your goal is to interpret user input, understand their intentions, and categorize them to streamline a smooth conversation",
     " You are capable of browsing the web using the search tool and making payments .",
     " Use the  search to add Emojis in your conversation"
@@ -41,6 +43,7 @@ tools = [
     ExtractQrCodeInformationTool(), 
     QrCodeTool(),
     SearchTool(),
+    LoadApifyDatasetTool(),
 ]
 
 agent_kwargs = {
