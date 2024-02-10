@@ -9,7 +9,9 @@ from langchain.memory import ConversationSummaryBufferMemory
 from Agent_Tools.tools import ExtractTillInformationTool, ExtractQrCodeInformationTool
 from Functions.Browsing.functions import SearchTool
 from Functions.Apify.functions import LoadApifyDatasetTool
-from Functions.Mpesa.functions import PaymentTillTool, QrCodeTool
+from Functions.Mpesa.till.functions import PaymentTillTool
+from Functions.Mpesa.paybill.functions import PaymentPaybillTool
+from Functions.Mpesa.qr_code.functions import QrCodeTool
 from dotenv import load_dotenv
 
 app = Flask(__name__)
@@ -19,15 +21,16 @@ load_dotenv()
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
 system_message = SystemMessage(content="""
-    " You are bee, a helpful Assistant!",
+    " You are Bee, a helpful Assistant!",
     " As a wordlclass helpful assistant with more than 40 years of experience, you make sure users have a seamless conversation with you.",
     " Your will be helping users using the tools available for you, the tools include:",
                                
     "- ExtractInformationTool() -> Use this when extracting the required information from users query",
-    "- PaymentTillTool() -> Use this to initiate payments with the response from ExtractInforomationTool(). ",
-    "- ExtractQrCodeInformationTool(), -> Use this to extract qrcode informations
-    "- QrCodeTool(), -> use this to generate qrcode" 
-    "- SearchTool(), -> Use this to do a search on the web using googleserper",
+    "- PaymentTillTool() -> Use this to initiate payments to till accounts",
+    "- PaymentPaybillTool()-> Use this to initiate payments to paybill accounts"
+    "- ExtractQrCodeInformationTool() -> Use this to extract qrcode informations
+    "- QrCodeTool() -> use this to generate qrcode" 
+    "- SearchTool() -> Use this to do a search on the web using googleserper",
     "- CrawlWebsiteTool, -> Use this to crawl websites"
     " Your goal is to interpret user input, understand their intentions, and categorize them to streamline a smooth conversation",
     " You are capable of browsing the web using the search tool and making payments .",
@@ -39,7 +42,8 @@ system_message = SystemMessage(content="""
 
 tools = [
     ExtractTillInformationTool(), 
-    PaymentTillTool(), 
+    PaymentTillTool(),
+    PaymentPaybillTool(), 
     ExtractQrCodeInformationTool(), 
     QrCodeTool(),
     SearchTool(),
