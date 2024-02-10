@@ -12,12 +12,9 @@ Bee-AI is a chatbot built using Flask and OpenAI's GPT-3.5 language model, desig
 
 ## Tools and APIs Used
 
-- **Flask**: A micro web framework for building web applications in Python.
-- **Twilio**: A cloud communications platform for building SMS, Voice, and Messaging applications.
-- **OpenAI GPT-3.5**: A powerful natural language processing model for generating human-like text.
 - **Google Serper API**: An API for accessing search engine results pages from Google.
 - **Safaricom Daraja API**: An API provided by Safaricom for mobile payment integration in Kenya.
-- **dotenv**: A Python module that reads key-value pairs from a .env file and sets them as environment variables.
+
 
 ## Planned Additions
 
