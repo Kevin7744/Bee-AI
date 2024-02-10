@@ -3,26 +3,29 @@ from langchain.tools import BaseTool
 from langchain.agents import Tool
 from langchain.docstore.document import Document
 from langchain.indexes import VectorstoreIndexCreator
-from langchain_community.document_loaders import ApifyDatasetLoader
+from langchain_community.document_loaders import ApifyWrapper
 
-class LoadApifyDatasetInput(BaseModel):
-    dataset_id: str = Field(description="The ID of the Apify dataset to load.")
+class CrawlWebsiteInput(BaseModel):
+    query: str = Field(description="The URL of the website to crawl.")
 
-class LoadApifyDatasetOutput(BaseModel):
-    data: list = Field(description="List of documents loaded from the Apify dataset.")
+class CrawlWebsiteOutput(BaseModel):
+    index: VectorstoreIndexCreator = Field(description="Vectorstore index created from the crawled website content.")
 
-class LoadApifyDatasetTool(BaseTool):
-    name = "load_apify_dataset"
-    description = "Tool for loading data from an Apify dataset."
-    args_schema = LoadApifyDatasetInput
-    result_schema = LoadApifyDatasetOutput
+class CrawlWebsiteTool(BaseTool):
+    name = "crawl_website_and_index"
+    description = "Tool for crawling a website and creating a vector index."
+    args_schema = CrawlWebsiteInput
+    result_schema = CrawlWebsiteOutput
 
-    def _run(self, inputs):
-        loader = ApifyDatasetLoader(
-            dataset_id=inputs.dataset_id,
+    def _run(self, inputs): 
+        apify = ApifyWrapper()
+
+        loader = apify.call_actor(
+            actor_id="apify/website-content-crawler",
+            run_input={"startUrls": [{"url": inputs.query}], "maxCrawlPages": 10, "crawlerType": "cheerio"},
             dataset_mapping_function=lambda item: Document(
-                page_content=item.get("text", ""), metadata={"source": item.get("url", "")}
+                page_content=item["text"] or "", metadata={"source": item["url"]}
             ),
         )
-        data = loader.load()
-        return {"data": data}
+        index = VectorstoreIndexCreator().from_loaders([loader])
+        return {"index": index}

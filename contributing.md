@@ -7,6 +7,7 @@ Thank you for considering contributing to Bee-AI Chatbot! This document provides
 Before adding a new tool, make sure you have the following prerequisites installed:
 
 - Python 3.x
+- Install the necessary dependencies using the [requirements.txt](requirements.txt)
 - Git
 
 ## Steps to Add a New Tool
@@ -23,30 +24,32 @@ Before adding a new tool, make sure you have the following prerequisites install
     git checkout -b feature/new-tool
     ```
 
-3. **Implement the Tool**: Create a new Python file for your tool in the `Functions` directory. Ensure the tool class inherits from `BaseTool` and implements the required methods. Add the tool to the `main.py` file and update the system-message.
+3. **Implement the Tool**: 
+    - Create new directory in the [Functions](Functions) directory.
+    - Add a pydantic class of the tool with its desctiptions.
+    - Ensure the tool class inherits from `BaseTool` and implements the required methods. 
+    - Add the tool to the [main.py](main.py) file and update the system-message with context of the tool added.
 
-4. **Write Tests**: Write unit tests for your tool to ensure its functionality and integration with the chatbot.
+4. **Update README**: If your tool introduces significant changes or new features, update the README.md file to reflect these changes.
 
-5. **Update README**: If your tool introduces significant changes or new features, update the README.md file to reflect these changes.
-
-6. **Commit Changes**: Commit your changes with descriptive commit messages.
+5. **Commit Changes**: Commit your changes with descriptive commit messages.
 
     ```bash
     git add .
     git commit -m "Add new tool for XYZ functionality"
     ```
 
-7. **Push Changes**: Push your changes to your forked repository.
+6. **Push Changes**: Push your changes to your forked repository.
 
     ```bash
     git push origin feature/new-tool
     ```
 
-8. **Create Pull Request**: Submit a pull request to the main Bee-AI Chatbot repository. Provide a clear title and description for your pull request, detailing the changes made and the purpose of the new tool.
+7. **Create Pull Request**: Submit a pull request to the main Bee-AI Chatbot repository. Provide a clear title and description for your pull request, detailing the changes made and the purpose of the new tool.
 
-9. **Review and Collaborate**: Collaborate with other contributors and address any feedback or suggestions provided during the review process.
+8. **Review and Collaborate**: Collaborate with other contributors and address any feedback or suggestions provided during the review process.
 
-10. **Merge Pull Request**: Once your pull request is approved, it will be merged into the main branch, and your new tool will be integrated into the Bee-AI Chatbot.
+9. **Merge Pull Request**: Once your pull request is approved, it will be merged into the main branch, and your new tool will be integrated into the Bee-AI Chatbot.
 
 ## Code Style and Guidelines
 
@@ -54,11 +57,6 @@ Before adding a new tool, make sure you have the following prerequisites install
 - Write clear and concise code with descriptive variable and function names.
 - Include docstrings and comments where necessary to improve code readability.
 
-## Testing
-
-- Ensure all unit tests pass before submitting your pull request.
-- Write comprehensive unit tests to cover all aspects of your tool's functionality.
-- Test edge cases and handle exceptions gracefully.
 
 ## License
 
