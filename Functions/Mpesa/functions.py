@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field, constr
 from typing import Optional, Type
 from langchain.tools import BaseTool
+from pydantic import BaseModel, Field
 
 load_dotenv()
 
@@ -54,13 +55,11 @@ class PaymentTillOutput(BaseModel):
     error_message: Optional[str] = Field(description="Error message in case of failure")
 
 def initiate_payment(amount: float, business_short_code: str, party_a: float, transaction_type: str, account_reference: str):
-    # Calling the get_access_token method to obtain the access token
     access_token_response = get_access_token()
 
     if isinstance(access_token_response, AccessTokenOutput):
         access_token = access_token_response.access_token
         if access_token:
-            # Rest of the code for STK push with the obtained access token
             process_request_url = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
             callback_url = 'http://yourcustomurl.local/'
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -123,7 +122,6 @@ class QrCodeInput(BaseModel):
     cpi: str = Field(description="Credit Party Identifier. Can be a Mobile Number, Business Number, Agent Till, Paybill or Business number, or Merchant Buy Goods")
     size: str = Field(description="Size of the QR code image in pixels. QR code image will always be a square image")
 
-from pydantic import BaseModel, Field
 
 class QrCodeOutput(BaseModel):
     response_code: str = Field(description="Used to return the Transaction Type")

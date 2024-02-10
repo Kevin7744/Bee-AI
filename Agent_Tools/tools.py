@@ -7,7 +7,6 @@ from langchain.tools import BaseTool
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 def extract_till_information(user_input: str):
-    # Construct the prompt
     prompt = f"""
     USER_INPUT: {user_input}
     ---
@@ -36,7 +35,6 @@ def extract_till_information(user_input: str):
         - account_reference: SAFARI
     """
 
-    # Make a request to OpenAI API
     extract_info = openai.chat.completions.create(
         model="gpt-4",
         messages=[
@@ -59,7 +57,6 @@ class ExtractTillInformationTool(BaseTool):
     args_schema: Type[BaseModel] = ExtractTillInformationInput
 
     def _run(self, user_input: str):
-        # Call the external function to extract information
         return extract_till_information(user_input)
 
     def _arun(self, url: str):

@@ -15,27 +15,26 @@ app = Flask(__name__)
 
 load_dotenv()
 
-# Initialize ChatOpenAI with the specified model
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
-# Define the system message
 system_message = SystemMessage(content="""
-    "You are an helpful Assistant!",
-    "As a wordlclass helpful assistant with more than 40 years of experience, you make sure users have a seamless conversation.",
-    "Your will be helping users using the tools available, the tools include:",
+    " You are bee, a helpful Assistant!",
+    " As a wordlclass helpful assistant with more than 40 years of experience, you make sure users have a seamless conversation with you.",
+    " Your will be helping users using the tools available for you, the tools include:",
                                
     "- ExtractInformationTool() -> Use this when extracting the required information from users query",
     "- PaymentTillTool() -> Use this to initiate payments with the response from ExtractInforomationTool(). ",
-    "- ExtractQrCodeInformationTool(), 
-    "-  QrCodeTool(),"
-    "-  SearchTool(),",
-    "Your goal is to interpret user input, understand their intentions, and categorize them to streamline a smooth conversation process.",
-    "You are capable of browsing the web using the search tool and making payments .",
-    "For instance, if a user inputs: 'pay 1000 shillings to 174379',"
-    "Use the  search to add Emojis in your conversation"
+    "- ExtractQrCodeInformationTool(), -> Use this to extract qrcode informations
+    "- QrCodeTool(), -> use this to generate qrcode" 
+    "- SearchTool(), -> Use this to do a search on the web using googleserper",
+    " Your goal is to interpret user input, understand their intentions, and categorize them to streamline a smooth conversation",
+    " You are capable of browsing the web using the search tool and making payments .",
+    " Use the  search to add Emojis in your conversation"
+    " Respond with the language the user uses. If the uses texts in 'English' respond in 'English, If the user texts in 'Sheng' respond in 'Sheng'."
+    " Don't make thinbs up"
     """)
 
-# Define the tools and agent settings
+
 tools = [
     ExtractTillInformationTool(), 
     PaymentTillTool(), 
@@ -54,7 +53,7 @@ memory = ConversationSummaryBufferMemory(memory_key="memory",
                                          llm=llm,
                                          max_token_limit=250)
 
-# Create the agent
+
 agent = initialize_agent(
     tools,
     llm,
@@ -71,26 +70,21 @@ def chat():
     try:
         user_input = request.form["Body"]
     except Exception as e:
-        return jsonify({"error": str(e)}), 400  # Bad Request for missing or invalid Body
-
+        return jsonify({"error": str(e)}), 400  
     if user_input.lower() == "end":
         return jsonify({
             "message": "Have a good day!"
         })
 
-    # Input the user message into the agent
     agent_response = agent({"input": user_input})
-    print("Agent Response:", agent_response)  # Print for debugging
+    print("Agent Response:", agent_response)  
 
-    # Access the assistant's response content from the output field
     assistant_message_content = agent_response.get(
         "output", "No response from the assistant.")
 
-    # Prepare Twilio response
     twilio_resp = MessagingResponse()
     twilio_resp.message(assistant_message_content)
 
-    # Return Twilio response
     return str(twilio_resp)
 
 
