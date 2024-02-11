@@ -8,7 +8,7 @@ from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
 from Agent_Tools.tools import ExtractTillInformationTool, ExtractQrCodeInformationTool
 from Functions.Browsing.functions import SearchTool
-from Functions.Apify.functions import CrawlWebsiteTool
+# from Functions.Apify.functions import CrawlWebsiteTool
 from Functions.Mpesa.till.functions import PaymentTillTool
 from Functions.Mpesa.paybill.functions import PaymentPaybillTool
 from Functions.Mpesa.qr_code.functions import QrCodeTool
@@ -47,7 +47,7 @@ tools = [
     ExtractQrCodeInformationTool(), 
     QrCodeTool(),
     SearchTool(),
-    CrawlWebsiteTool(),
+    # CrawlWebsiteTool(),
 ]
 
 agent_kwargs = {
