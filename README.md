@@ -1,5 +1,6 @@
 # Bee-AI Chatbot
-![image](https://github.com/Kevin7744/Bee-AI/assets/105924200/654f673d-7974-4f5f-8350-5bf66836de40)
+![image](https://github.com/Kevin7744/Bee-AI/assets/105924200/124ffbd2-ed03-445e-b9b9-eb2a68b8f812)
+
 
 Bee-AI is a chatbot built using Flask and OpenAI's GPT-3.5 language model, designed to provide assistance through text-based conversations. It utilizes various tools and APIs to offer a range of functionalities, including information extraction, web browsing, and mobile payment integration.
 
