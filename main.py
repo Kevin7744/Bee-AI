@@ -6,7 +6,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 from langchain.agents import initialize_agent, AgentType
 from langchain_community.chat_models import ChatOpenAI
-from langchain_mistralai.chat_models import ChatMistralAI
+# from langchain_mistralai.chat_models import ChatMistralAI
 from langchain.schema import SystemMessage
 from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
@@ -23,12 +23,12 @@ from Agent_Tools.Voice.tools import record_and_transcribe, chatgpt, print_colore
 
 from dotenv import load_dotenv
 
+load_dotenv()
 
 app = Flask(__name__)
 
-load_dotenv()
 
-llm = ChatOpenAI(temperature=0)
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 
 system_message = SystemMessage(content="""
     " You are Bee, a helpful Assistant!",
