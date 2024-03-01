@@ -19,7 +19,7 @@ from Functions.Mpesa.till.functions import PaymentTillTool
 from Functions.Mpesa.paybill.functions import PaymentPaybillTool
 from Functions.Mpesa.qr_code.functions import QrCodeTool
 
-from Agent_Tools.Voice.tools import record_and_transcribe, chatgpt, print_colored, text_to_speech
+# from Agent_Tools.Voice.tools import record_and_transcribe, chatgpt, print_colored, text_to_speech
 
 from dotenv import load_dotenv
 
