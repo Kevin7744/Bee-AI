@@ -1,31 +1,65 @@
-# from pydantic import BaseModel, Field
-# from langchain.tools import BaseTool
-# from langchain.agents import Tool
-# from langchain.docstore.document import Document
-# from langchain.indexes import VectorstoreIndexCreator
-# from langchain_community.document_loaders import ApifyWrapper
+from langchain.tools import BaseTool
+from langchain_community.document_loaders import ApifyDatasetLoader
+from langchain_core.documents import Document
+from pydantic import BaseModel, Field
+from dotenv import load_dotenv
+import os
 
-# class CrawlWebsiteInput(BaseModel):
-#     query: str = Field(description="The URL of the website to crawl.")
+load_dotenv()
 
-# class CrawlWebsiteOutput(BaseModel):
-#     index: VectorstoreIndexCreator = Field(description="Vectorstore index created from the crawled website content.")
+apify_api_token = os.getenv("APIFY_API_TOKEN")
+if not apify_api_token:
+    raise ValueError("Apify API token not found. Please set the APIFY_API_TOKEN environment variable.")
 
-# class CrawlWebsiteTool(BaseTool):
-#     name = "crawl_website_and_index"
-#     description = "Tool for crawling a website and creating a vector index."
-#     args_schema = CrawlWebsiteInput
-#     result_schema = CrawlWebsiteOutput
+class CrawlInput(BaseModel):
+    dataset_id: str = Field(description="The ID of the dataset on the Apify platform.")
 
-#     def _run(self, inputs): 
-#         apify = ApifyWrapper()
+class CrawlOutput(BaseModel):
+    response_code: str = Field(description="Response code for the crawl.")
+    crawled_data: list = Field(description="List of extracted data from crawled pages.")
 
-#         loader = apify.call_actor(
-#             actor_id="apify/website-content-crawler",
-#             run_input={"startUrls": [{"url": inputs.query}], "maxCrawlPages": 10, "crawlerType": "cheerio"},
-#             dataset_mapping_function=lambda item: Document(
-#                 page_content=item["text"] or "", metadata={"source": item["url"]}
-#             ),
-#         )
-#         index = VectorstoreIndexCreator().from_loaders([loader])
-#         return {"index": index}
+def dataset_mapping_function(dataset_item: dict) -> Document:
+    """Convert an Apify dataset item to a Document."""
+    return Document(
+        page_content=dataset_item.get("text", ""),
+        metadata={"source": dataset_item.get("url")}
+    )
+
+def perform_crawl(dataset_id: str) -> CrawlOutput:
+    """Load and process a dataset from Apify using the provided dataset ID."""
+    from apify_client import ApifyClient
+
+    # Initialize the ApifyClient with the API token
+    apify_client = ApifyClient(apify_api_token)
+
+    loader = ApifyDatasetLoader(
+        apify_client=apify_client,
+        dataset_id=dataset_id,
+        dataset_mapping_function=dataset_mapping_function
+    )
+    documents = loader.load()
+
+    # Process the documents as needed
+    crawled_data = [{
+        "url": doc.metadata["source"],
+        "content": doc.page_content
+    } for doc in documents]
+
+    return CrawlOutput(
+        response_code="success",
+        crawled_data=crawled_data
+    )
+
+class CrawlWebsiteTool(BaseTool):
+    name = "perform_crawl"
+    description = "Tool for loading and processing datasets from Apify using an API token."
+    args_schema = CrawlInput
+    result_schema = CrawlOutput
+
+    def _run(self, inputs: dict) -> CrawlOutput:
+        # Validate inputs
+        if not isinstance(inputs, dict) or 'dataset_id' not in inputs:
+            raise ValueError("Invalid inputs for CrawlWebsiteTool. 'dataset_id' is required.")
+        
+        dataset_id = inputs['dataset_id']
+        return perform_crawl(dataset_id)

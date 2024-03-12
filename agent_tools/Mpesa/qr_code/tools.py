@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
-from Functions.Mpesa.acess_token.functions import get_access_token, AccessTokenOutput
+from agent_tools.Mpesa.acess_token.tools import get_access_token, AccessTokenOutput
 
 load_dotenv()
 

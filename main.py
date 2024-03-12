@@ -14,7 +14,7 @@ from langchain.memory import ConversationSummaryBufferMemory
 from agent_functions.functions import ExtractTillInformationTool, ExtractQrCodeInformationTool
 
 from agent_tools.Browsing.tools import SearchTool
-# from agent_tools.Apify.tools import CrawlWebsiteTool
+from agent_tools.Apify.tools import CrawlWebsiteTool
 from agent_tools.Mpesa.till.tools import PaymentTillTool
 from agent_tools.Mpesa.paybill.tools import PaymentPaybillTool
 from agent_tools.Mpesa.qr_code.tools import QrCodeTool
@@ -57,7 +57,7 @@ tools = [
     ExtractQrCodeInformationTool(), 
     QrCodeTool(),
     SearchTool(),
-    # CrawlWebsiteTool(),
+    CrawlWebsiteTool(),
 ]
 
 agent_kwargs = {
@@ -81,28 +81,48 @@ agent = initialize_agent(
     user_input_key="input"
 )
 
-# Continuous conversation loop
+# Continuous conversation loop with twilio
+# @app.route("/chat", methods=["POST"])
+# def chat():
+#     try:
+#         user_input = request.form["Body"]
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 400  
+#     if user_input.lower() == "end":
+#         return jsonify({
+#             "message": "Have a good day!"
+#         })
+
+#     agent_response = agent({"input": user_input})
+#     print("Agent Response:", agent_response)  
+
+#     assistant_message_content = agent_response.get(
+#         "output", "No response from the assistant.")
+
+#     twilio_resp = MessagingResponse()
+#     twilio_resp.message(assistant_message_content)
+
+#     return str(twilio_resp)
+
+# Continuous conversation loop without twilio
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
-        user_input = request.form["Body"]
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400  
+        user_input = request.json["message"]
+    except (TypeError, KeyError, Exception) as e:
+        return jsonify({"error": str(e)}), 400
+
     if user_input.lower() == "end":
         return jsonify({
             "message": "Have a good day!"
         })
 
     agent_response = agent({"input": user_input})
-    print("Agent Response:", agent_response)  
+    print("Agent Response:", agent_response)
+    assistant_message_content = agent_response.get("output", "No response from the assistant.")
 
-    assistant_message_content = agent_response.get(
-        "output", "No response from the assistant.")
+    return jsonify({"response": assistant_message_content})
 
-    twilio_resp = MessagingResponse()
-    twilio_resp.message(assistant_message_content)
-
-    return str(twilio_resp)
 
 
 # while True:
